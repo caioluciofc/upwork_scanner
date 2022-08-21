@@ -13,7 +13,7 @@ class UpworkScanner():
 
     async def collect_xsrf_token_data(self):
         async with http3.AsyncClient() as client:
-            get_home_url = await client.get(url=self.login_url, headers=self.headers    )
+            get_home_url = await client.get(url=self.login_url, headers=self.headers)
             if get_home_url.status_code == 200:
                 cookies = get_home_url.cookies.items()
                 xsrf_token = [cookie[1] for cookie in cookies if cookie[0] == "XSRF-TOKEN"]
@@ -40,14 +40,10 @@ class UpworkScanner():
                                           json=login_data)
         login_request_data = login_request.json()
         if login_request.status_code == 200 and login_request_data.get("success") == 1:
-            print(login_request.status_code)
-            print(login_request.text)
             user_object = await self._collect_data(client)
             return user_object
         elif (login_request_data.get("success") == 0 and 
              login_request_data.get("alerts", {}).get("eventCode") == "wrongPassword"):
-            print(login_request.status_code)
-            print(login_request.text)
             raise WrongUsernamePassword()
 
     def _parse_data(self, user_data):
