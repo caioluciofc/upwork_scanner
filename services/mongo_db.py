@@ -3,7 +3,6 @@ import pymongo
 
 
 class MongoDbClient():
-
     def __init__(self):
         self.client = MongoClient("mongodb+srv://earthdni:oIB0OdI69touYewU@cluster0.b2o9p.mongodb.net/?retryWrites=true&w=majority")
         self.db = self.client.UpworkScanner

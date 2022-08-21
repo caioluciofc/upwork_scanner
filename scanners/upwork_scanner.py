@@ -6,6 +6,15 @@ alternative_headers = ["Mozilla/5.0 (X11; Linux x86_64; rv:12.0) Gecko/20100101 
                        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1"]
 
 class UpworkScanner():
+    """
+    This Scanner has the objective to fetch the user data at Upwork
+    It works first fetching the Cross Site Request Forgery (XSRF) token from a simple get request
+    on the website and continues using this token for validation on the next iterations.
+    If the website refuses to accept the request, it`ll try again with a different header.
+    After collecting the token, it`ll try to login using the credentials provided, and after
+    the session is logged in, it`ll fetch the data and return a dictionary with the collected data.
+    :doc-author: Caio Carvalho
+    """
     def __init__(self):
         self.login_url = 'https://www.upwork.com/ab/account-security/login'
         self.home_url = 'https://www.upwork.com/'

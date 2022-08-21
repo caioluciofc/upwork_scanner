@@ -16,6 +16,19 @@ async def test(request):
 
 @app.route('/fetch_data')
 async def fetch_user_data(request):
+    """
+    The get function is used enter into Upwork website and collect the user data.
+    It takes in a request object and returns a json response.
+    The request must contain the following arguments:
+        - username (string) : The username of the user to be scanned,
+        - password (string) : The password of the user to be scanned.
+
+        If any of these fields are missing or invalid, an error message will be returned instead.
+
+    :param request: Get the data from the request
+    :return: A json object with the data collected
+    :doc-author: Caio Carvalho
+    """
     upwork_scanner = UpworkScanner()
     request_args = request.args
     # http://127.0.0.1:5000/fetch_data?username=bobbybackupy&password=Argyleawesome123!
