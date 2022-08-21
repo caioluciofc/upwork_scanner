@@ -42,11 +42,7 @@ class UpworkScanner():
         login_data = {
             "login": {"password": "Argyleawesome123!",
                       "mode": "password",
-                      "username": "bobbybackupy",
-                      "deviceAuthorization": {
-                          "answer": "Hemingway",
-                          "remember": True
-                      }}
+                      "username": "bobbybackupy"}
         }
         login_request = await client.post(url=self.login_url,
                                           headers=self.headers,

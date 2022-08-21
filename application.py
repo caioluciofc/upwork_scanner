@@ -5,6 +5,8 @@ from mainzao import UpworkScanner
 import asyncio
 import aiotask_context as context
 import pymongo
+from models.upwork_user import UpworkUser
+
 
 app = Sanic("my-hello-world-app")
 
@@ -22,6 +24,9 @@ async def test(request):
 async def fetch_user_data(request):
     upwork_scanner = UpworkScanner()
     data_fetched = await upwork_scanner.collect_user_data()
+    user_model = UpworkUser(**data_fetched)
+    print(user_model)
+    print(user_model.user_rid)
     print(data_fetched)
     return json(data_fetched)
 
