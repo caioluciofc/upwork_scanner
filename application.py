@@ -43,8 +43,24 @@ if __name__ == '__main__':
         return_asyncio_server=True,
     )
     loop = asyncio.get_event_loop()
-    loop.set_task_factory(context.task_factory)
+    # loop.set_task_factory(context.task_factory)
     serv_task = asyncio.ensure_future(serv_coro, loop=loop)
     server = loop.run_until_complete(serv_task)
-    server.after_start()
-    loop.run_forever()
+    loop.run_until_complete(server.startup())
+    loop.run_until_complete(server.before_start())
+    loop.run_until_complete(server.after_start())
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        loop.stop()
+    finally:
+        loop.run_until_complete(server.before_stop())
+
+        # Wait for server to close
+        close_task = server.close()
+        loop.run_until_complete(close_task)
+
+        # Complete all tasks on the loop
+        for connection in server.connections:
+            connection.close_if_idle()
+        loop.run_until_complete(server.after_stop())
