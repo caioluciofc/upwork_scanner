@@ -13,7 +13,7 @@ class UpworkScanner():
 
     async def collect_xsrf_token_data(self):
         async with http3.AsyncClient() as client:
-            get_home_url = await client.get(url=self.login_url, headers=self.headers, timeout=40)
+            get_home_url = await client.get(url=self.login_url, headers=self.headers)
             if get_home_url.status_code == 200:
                 cookies = get_home_url.cookies.items()
                 xsrf_token = [cookie[1] for cookie in cookies if cookie[0] == "XSRF-TOKEN"]
