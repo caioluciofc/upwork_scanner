@@ -2,6 +2,9 @@ import http3
 import asyncio
 from helpers.exceptions import WrongUsernamePassword
 
+alternative_headers = ["Mozilla/5.0 (X11; Linux x86_64; rv:12.0) Gecko/20100101 Firefox/12.0",
+                       "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1"]
+
 class UpworkScanner():
     def __init__(self):
         self.login_url = 'https://www.upwork.com/ab/account-security/login'
@@ -94,8 +97,14 @@ class UpworkScanner():
     async def collect_user_data(self, username, password):
         xsrf_token, client = await self.collect_xsrf_token_data()
         if not xsrf_token and not client:
-            # TODO add proxy logic
-            pass
+            # TODO : Also use a proxy here, since eventually the IP will be flagged
+            # A good alternative would be using scrapingbee, but since frameworks as
+            # such are discouraged, I haven`t used it`
+            for header in alternative_headers:
+                self.headers = header
+                xsrf_token, client = await self.collect_xsrf_token_data()
+                if xsrf_token and client:
+                    break
         user_object = await self._login(xsrf_token, client, username, password)
         return user_object
 
