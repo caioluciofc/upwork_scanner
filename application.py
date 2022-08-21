@@ -1,19 +1,13 @@
 import uvloop
 from sanic import Sanic
 from sanic.response import json
-from mainzao import UpworkScanner
+from scanners.upwork_scanner import UpworkScanner
+from helpers.exceptions import WrongUsernamePassword
 import asyncio
 import aiotask_context as context
-import pymongo
 from models.upwork_user import UpworkUser
 
-
-app = Sanic("my-hello-world-app")
-
-client = pymongo.MongoClient(
-    "mongodb+srv://earthdni:oIB0OdI69touYewU@cluster0.b2o9p.mongodb.net/?retryWrites=true&w=majority")
-db = client.test
-
+app = Sanic("upwork-scanner")
 
 @app.route('/')
 async def test(request):
@@ -23,12 +17,23 @@ async def test(request):
 @app.route('/fetch_data')
 async def fetch_user_data(request):
     upwork_scanner = UpworkScanner()
-    data_fetched = await upwork_scanner.collect_user_data()
-    user_model = UpworkUser(**data_fetched)
-    print(user_model)
-    print(user_model.user_rid)
-    print(data_fetched)
-    return json(data_fetched)
+    request_args = request.args
+    # http://127.0.0.1:5000/fetch_data?username=bobbybackupy&password=Argyleawesome123!
+
+    if "username" not in request_args or "password" not in request_args:
+        return json({"Error": "Required field missing"}, 400)
+
+    username = request_args["username"][0]
+    password = request_args["password"][0]
+
+    try:
+        data_fetched = await upwork_scanner.collect_user_data(username, password)
+        user_model = UpworkUser(**data_fetched)
+        user_model.write_to_db()
+        return json(user_model.dict(), 200)
+    except WrongUsernamePassword:
+        return json({"Error": "Username or Password used is wrong"}, 400)
+
 
 if __name__ == '__main__':
     asyncio.set_event_loop(uvloop.new_event_loop())

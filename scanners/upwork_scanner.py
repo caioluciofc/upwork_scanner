@@ -1,6 +1,6 @@
 import http3
 import asyncio
-
+from helpers.exceptions import WrongUsernamePassword
 
 class UpworkScanner():
     def __init__(self):
@@ -10,7 +10,6 @@ class UpworkScanner():
         self.headers = {
             "User-Agent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36',
         }
-        self.xsrf_token = None
 
     async def collect_xsrf_token_data(self):
         async with http3.AsyncClient() as client:
@@ -18,44 +17,35 @@ class UpworkScanner():
             if get_home_url.status_code == 200:
                 cookies = get_home_url.cookies.items()
                 xsrf_token = [cookie[1] for cookie in cookies if cookie[0] == "XSRF-TOKEN"]
-                if xsrf_token:
-                    self.xsrf_token = xsrf_token[0]
-                    user_object = await self._login(client)
-                    return user_object
-                else:
-                    print("Caiu no else xsrf")
-                    # TODO RETRY HANDLER
-                    pass
+                self.xsrf_token = xsrf_token[0]
+                return xsrf_token[0], client
             else:
-                print("Caiu no else xsrf 2")
-                # TODO RETRY HANDLER
-                pass
+                return False, False
 
-    async def _login(self, client):
+    async def _login(self, xsrf_token, client, username, password):
         self.headers.update({
             'content-type': 'application/json',
             'x-requested-with': 'XMLHttpRequest',
-            'x-odesk-csrf-token': self.xsrf_token,
+            'x-odesk-csrf-token': xsrf_token,
             'referer': self.login_url,
         })
-        client.cookies.set('XSRF-TOKEN', self.xsrf_token)
+        client.cookies.set('XSRF-TOKEN', xsrf_token)
         login_data = {
-            "login": {"password": "Argyleawesome123!",
+            "login": {"password": password,
                       "mode": "password",
-                      "username": "bobbybackupy"}
+                      "username": username}
         }
         login_request = await client.post(url=self.login_url,
                                           headers=self.headers,
-                                          timeout=40,
                                           json=login_data)
-        if login_request.status_code == 200:
+        login_request_data = login_request.json()
+        if login_request.status_code == 200 and login_request_data["success"] == 1:
+            print(login_request.status_code)
+            print(login_request.text)
             user_object = await self._collect_data(client)
             return user_object
         else:
-            print(login_request.status_code)
-            print(login_request.text)
-            # TODO resolver esse else
-            pass
+            raise WrongUsernamePassword()
 
     def _parse_data(self, user_data):
         email = user_data.get("email").get("address")
@@ -72,6 +62,7 @@ class UpworkScanner():
         country = user_data.get("address").get("country")
         postal_code = user_data.get("address").get("zip")
         profile_picture_link = user_data.get("portrait").get("bigPortrait")
+        username = user_data.get("nid")
         user_object = {
             "first_name": first_name,
             "last_name": last_name,
@@ -82,6 +73,7 @@ class UpworkScanner():
             "email": email,
             "email_verified": email_verified,
             "profile_pic_link": profile_picture_link,
+            "username": username,
             "address": {
                 "line1": address_line_1,
                 "line2": address_line_2,
@@ -100,6 +92,12 @@ class UpworkScanner():
             user_object = self._parse_data(user_data)
             return user_object
 
-    async def collect_user_data(self, username = None, password = None):
-        user_object = await self.collect_xsrf_token_data()
+    async def collect_user_data(self, username, password):
+        xsrf_token, client = await self.collect_xsrf_token_data()
+        if not xsrf_token and not client:
+            # TODO add proxy logic
+            pass
+        user_object = await self._login(xsrf_token, client, username, password)
         return user_object
+
+
